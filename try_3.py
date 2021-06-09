@@ -1,3 +1,4 @@
+#%%
 import os
 import pandas as pd
 import numpy as np
@@ -17,6 +18,10 @@ from keras.layers import Input, Dropout, Dense, LSTM, TimeDistributed, RepeatVec
 from keras.models import Model
 from keras import regularizers
 
+#%%
+import pickle
+
+#%%
 # seed(10)
 # tf.random.set_seed(10)
 
@@ -34,8 +39,10 @@ speed_1 = speed_1.pivot(index='date', columns='LINK_ID', values='TRVL_SPD').rese
 speed_1.columns = ['date','link_1']
 #final data
 df = speed_1
+#%%
 df.to_csv("D:/BILAL/link_2.csv")
 
+#%%
 train,test = df.loc[df['date'] <= '2020-07-30 18:40:00'], df.loc[df['date']> '2020-07-30 18:40:00']
 train.set_index('date', inplace=True)
 test.set_index('date', inplace=True)
@@ -49,6 +56,7 @@ joblib.dump(scaler,scaler_filename)
 X_train = X_train.reshape(X_train.shape[0],1,X_train.shape[1])
 X_test = X_test.reshape(X_test.shape[0],1,X_test.shape[1])
 
+#%%
 #define autoencoder network model
 def autoencoder_model(X):
     inputs = Input(shape=(X.shape[1],X.shape[2]))
@@ -65,15 +73,15 @@ def autoencoder_model(X):
 model = autoencoder_model(X_train)
 model.compile(optimizer='adam', loss='mae')
 model.summary()
-
-
+#%%
 #fit model
 history = model.fit(X_train,X_train, epochs=100,batch_size=16, validation_split=0.05,verbose=1) #why used trainX two times
 
 plt.plot(history.history['loss'], label='Training loss')
 plt.plot(history.history['val_loss'],label='Validation loss')
 plt.legend()
-
+model.save("D:/BILAL/Bilal_anomaly.h5")
+#%%
 #anomaly is where reconstruction error is large
 x_pred = model.predict(X_train)
 x_pred = x_pred.reshape(x_pred.shape[0],x_pred.shape[2])
@@ -115,7 +123,6 @@ scored = pd.concat([scored_train,scored])
 
 scored.plot(logy = True, figsize=(16,9), ylim=[1e-2,1e2], color=['blue','red'])
 
-model.save("Bilal_anomaly.h5")
 
 
 # import tabpy_client
@@ -139,35 +146,18 @@ model.save("Bilal_anomaly.h5")
 
 # client.deploy('anomaly_pred', anomaly_pred,'Predicts anomaly_pred', override = True)
 
+#%%
+import keras
+bilal = keras.models.load_model('D:/BILAL/Bilal_anomaly.h5')
+
+#%%
+junaid = bilal.predict(X_test)
+junaid_pred = junaid.reshape(junaid.shape[0],junaid.shape[2])
 
 
+# %%
+jun = junaid_pred.tolist()
+# %%
+junaid_pred = junaid_pred.reshape(-1)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# %%
